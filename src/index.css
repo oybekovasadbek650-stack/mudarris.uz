@@ -1,0 +1,85 @@
+@import 'tailwindcss';
+
+/*
+  TASHKILOT MAVZULARI (logolardan olingan ranglar).
+  <html data-org="school | academy | kindergarten"> — qaysi biri bo'lsa, shu ranglar va shrift ishlaydi.
+  Komponentlarda faqat brand-* ranglari ishlatiladi: bg-brand, from-brand to-brand-strong, text-brand ...
+
+  Mini App fon/matn ranglari Telegram mavzusidan olinadi (yorug'/qorong'i avtomatik).
+*/
+
+/* Mudarris Xususiy Maktabi — to'q ko'kdan yorqin ko'kka gradient, oq kitob */
+:root,
+[data-org='school'] {
+  --brand: #2f6fd6;
+  --brand-strong: #1b3260;
+  --brand-dark: #0d1a36;
+  --brand-accent: #5b9cf0;
+  --app-bg: #edf2fa;
+  --org-font: 'Manrope';
+}
+
+/* Mudarris Akademiyasi — ko'k #2A539B, och kulrang kvadrat, pero */
+[data-org='academy'] {
+  --brand: #2a539b;
+  --brand-strong: #1c3a72;
+  --brand-dark: #0f1f42;
+  --brand-accent: #9db7e0;
+  --app-bg: #eef1f6;
+  --org-font: 'Manrope';
+}
+
+/* Mudarris bog'chasi — yashil, to'q ko'k, sariq "M" */
+[data-org='kindergarten'] {
+  --brand: #13b87a;
+  --brand-strong: #0d8f5e;
+  --brand-dark: #13213b;
+  --brand-accent: #f1c81e;
+  --app-bg: #eef8f2;
+  --org-font: 'Nunito';
+}
+
+@theme inline {
+  --font-sans: var(--org-font), system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-dark: var(--brand-dark);
+  --color-brand-accent: var(--brand-accent);
+  --color-app: var(--app-bg);
+
+  --color-tg-bg: var(--tg-theme-bg-color, #ffffff);
+  --color-tg-secondary: var(--tg-theme-secondary-bg-color, var(--app-bg));
+  --color-tg-text: var(--tg-theme-text-color, #0f172a);
+  --color-tg-hint: var(--tg-theme-hint-color, #64748b);
+  --color-tg-link: var(--tg-theme-link-color, var(--brand));
+}
+
+@keyframes pop-in {
+  0% { transform: scale(0.6); opacity: 0; }
+  70% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+@keyframes fade-up {
+  from { transform: translateY(8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@theme {
+  --animate-pop-in: pop-in 0.45s ease-out both;
+  --animate-fade-up: fade-up 0.35s ease-out both;
+}
+
+html,
+body {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--app-bg);
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s;
+}
