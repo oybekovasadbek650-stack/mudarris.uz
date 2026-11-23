@@ -1,4 +1,6 @@
-import { Link, Route, Routes } from 'react-router-dom'
+import { Link, Navigate, Route, Routes } from 'react-router-dom'
+import { getToken } from './lib/auth'
+import { InstallAppCard } from './components/InstallApp'
 import AppLayout from './pages/app/AppLayout'
 import TodayPage from './pages/app/TodayPage'
 import AbsencePage from './pages/app/AbsencePage'
@@ -12,18 +14,25 @@ import SchedulePage from './pages/admin/SchedulePage'
 import TeachersPage from './pages/admin/TeachersPage'
 import SettingsPage from './pages/admin/SettingsPage'
 import ReportPage from './pages/admin/ReportPage'
+import BranchesPage from './pages/admin/BranchesPage'
+import DavomatPage from './pages/admin/DavomatPage'
 import { ChevronRight, MapPinOff, MonitorSmartphone, Smartphone } from 'lucide-react'
-import { OrgLogoStack } from './components/OrgLogo'
+import { MudarrisLogo } from './components/OrgLogo'
 import { useApplyOrg } from './lib/org'
+import { useLiveUpdates } from './lib/live'
 import { EmptyState } from './components/ui'
 import RequireAuth from './components/RequireAuth'
 import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
+import JoinPage from './pages/auth/JoinPage'
 import AdminLoginPage from './pages/auth/AdminLoginPage'
 
 /** Bosh sahifa — ishlab chiqish paytida ikki qismga tez o'tish uchun */
 function Home() {
   useApplyOrg(undefined)
+  // Telefondagi ilova belgisi "/" ni ochadi: kirgan bo'lsa — to'g'ri joyga (ustoz -> ilova, direktor/rahbariyat -> panel)
+  if (getToken('teacher')) return <Navigate to="/app" replace />
+  if (getToken('admin')) return <Navigate to="/admin" replace />
   const items = [
     { to: '/app', icon: Smartphone, title: 'Mini App', text: "O'qituvchi va mas'ul shaxs uchun · telefon, Telegram ichida", gradient: 'from-brand to-brand-strong' },
     { to: '/admin', icon: MonitorSmartphone, title: 'Rahbariyat paneli', text: "Bugungi holat, jadval, o'qituvchilar, hisobot · kompyuter", gradient: 'from-violet-500 to-fuchsia-500' },
@@ -35,7 +44,7 @@ function Home() {
       <div className="relative w-full max-w-md space-y-4">
         <div className="mb-8 text-center text-white">
           <div className="mb-5 flex justify-center">
-            <OrgLogoStack className="h-16 w-16" />
+            <MudarrisLogo className="h-16 w-16" />
           </div>
           <h1 className="text-3xl font-extrabold">Mudarris · O'rinbosar</h1>
           <p className="mt-1 text-sm font-semibold text-white/60">Bog'cha, maktab va akademiya uchun</p>
@@ -52,17 +61,20 @@ function Home() {
             <ChevronRight className="h-5 w-5 text-white/60 transition group-hover:translate-x-1" />
           </Link>
         ))}
+        <InstallAppCard />
       </div>
     </div>
   )
 }
 
 export default function App() {
+  useLiveUpdates()
   return (
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/join" element={<JoinPage />} />
       <Route path="/admin/login" element={<AdminLoginPage />} />
       <Route path="/app" element={<RequireAuth role="teacher"><AppLayout /></RequireAuth>}>
         <Route index element={<TodayPage />} />
@@ -78,6 +90,8 @@ export default function App() {
         <Route path="teachers" element={<TeachersPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="report" element={<ReportPage />} />
+        <Route path="branches" element={<BranchesPage />} />
+        <Route path="davomat" element={<DavomatPage />} />
       </Route>
       <Route path="*" element={<EmptyState icon={MapPinOff} title="Sahifa topilmadi" action={<Link to="/" className="text-brand">Bosh sahifaga</Link>} />} />
     </Routes>

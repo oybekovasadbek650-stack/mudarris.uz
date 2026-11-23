@@ -33,17 +33,26 @@ export function writeOrgPref(org: OrgFilter) {
   }
 }
 
+/** Panelga kirgan foydalanuvchi: direktor bo'lsa — faqat o'z filiali */
+export function usePanelUser() {
+  const me = useQuery({ queryKey: ['me'], queryFn: api.getMe })
+  return { me: me.data, isDirector: me.data?.role === 'director' }
+}
+
 /** Tanlangan tashkilotdagi filiallar va "shu filial tanlangan tashkilotdami?" tekshiruvi */
 export function useOrgBranches() {
   const { org } = useAdminOrg()
+  const { me, isDirector } = usePanelUser()
   const branches = useQuery({ queryKey: ['branches'], queryFn: api.getBranches })
-  const list = (branches.data ?? []).filter((b) => org === 'all' || b.org === org)
+  const list = (branches.data ?? []).filter((b) => (isDirector ? b.id === me?.branchId : org === 'all' || b.org === org))
   const ids = new Set(list.map((b) => b.id))
   return {
     org,
+    /** Filiallar ro'yxati serverdan kelganmi (bo'sh ro'yxatni "yuklanmoqda"dan ajratish uchun) */
+    loaded: branches.isSuccess,
     branches: list,
     allBranches: branches.data ?? [],
-    inOrg: (branchId: string) => org === 'all' || ids.has(branchId),
+    inOrg: (branchId: string) => (isDirector ? ids.has(branchId) : org === 'all' || ids.has(branchId)),
     branchName: (id: string) => branches.data?.find((b) => b.id === id)?.name ?? '',
   }
 }

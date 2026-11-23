@@ -207,7 +207,7 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
   return (
     <EmptyState
       icon={AlertTriangle}
-      gradient="from-rose-500 to-orange-500"
+      gradient="from-rose-500 to-pink-600"
       title="Xatolik yuz berdi"
       text={error instanceof Error ? error.message : "Iltimos, qayta urinib ko'ring"}
       action={onRetry && <Button variant="secondary" onClick={onRetry}>Qayta urinish</Button>}
@@ -243,7 +243,8 @@ export function Field({ label, hint, children }: { label: string; hint?: string;
 }
 
 export const inputClass =
-  'w-full rounded-2xl border-0 bg-slate-500/8 px-4 py-3 text-sm font-medium text-tg-text ring-1 ring-slate-500/15 outline-none transition placeholder:text-tg-hint/70 focus:bg-tg-bg focus:ring-2 focus:ring-brand'
+  // Telefonda 16px (text-base): kichikroq bo'lsa iPhone maydonga bosilganda ekranni kattalashtirib yuboradi
+  'w-full rounded-2xl border-0 bg-slate-500/8 px-4 py-3 text-base sm:text-sm font-medium text-tg-text ring-1 ring-slate-500/15 outline-none transition placeholder:text-tg-hint/70 focus:bg-tg-bg focus:ring-2 focus:ring-brand'
 
 // ---------- Mini App ----------
 

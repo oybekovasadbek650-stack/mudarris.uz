@@ -113,8 +113,14 @@ teachers.forEach((t, i) => {
 })
 
 const settings: Settings = {
-  noticeHours: 12,
+  noticeDeadline: '07:00',
   dailyLimit: 2,
+  offerTimeoutMinutes: 30,
+  offerBatchSize: 0,
+  attendanceCheck: false,
+  attendanceAskMinutes: 30,
+  attendanceEscalateMinutes: 15,
+  workDays: [1, 2, 3, 4, 5, 6],
   allowCrossBranch: false,
   paymentPerLesson: 50000,
 }
@@ -333,7 +339,7 @@ function toMe(id: string): Me {
 // Bir oynada qilingan o'zgarish (ro'yxatdan o'tish, tasdiqlash...) boshqa oynada ham ko'rinadi.
 
 export const MOCK_DB_KEY = 'orinbosar-mock-db'
-const DB_VERSION = 4
+const DB_VERSION = 9
 
 function saveDb() {
   try {
@@ -565,7 +571,8 @@ const rawApi: Api = {
   saveSettings(next) {
     requireAdmin()
     if (next.dailyLimit < 1) return fail("Kunlik chegara kamida 1 bo'lishi kerak")
-    if (next.noticeHours < 0 || next.paymentPerLesson < 0) return fail("Manfiy qiymat bo'lishi mumkin emas")
+    if (!/^\d{2}:\d{2}$/.test(next.noticeDeadline)) return fail("Muddat HH:MM ko'rinishida bo'lsin")
+    if (next.paymentPerLesson < 0) return fail("Manfiy qiymat bo'lishi mumkin emas")
     Object.assign(settings, next)
     return ok(settings)
   },
@@ -585,7 +592,96 @@ const rawApi: Api = {
         payment: substitutedLessons * settings.paymentPerLesson,
       }
     })
-    return ok(rows)
+    return ok({ month, rows, davomat: { enabled: false, ok: false } })
+  },
+
+  approveCandidate(caseId, teacherId) {
+    requireAdmin()
+    const c = cases.find((x) => x.id === caseId)
+    if (!c) return fail('Holat topilmadi')
+    if (c.status !== 'pending') return fail("Bu dars uchun o'rinbosar allaqachon hal qilingan")
+    if (!offers.some((o) => o.caseId === caseId && o.teacherId === teacherId && o.status === 'accepted')) {
+      return fail('Bu ustoz taklifni qabul qilmagan')
+    }
+    choose(caseId, teacherId)
+    return ok({ ...toCase(c), chosenBy: 'Rahbariyat' })
+  },
+
+  // Demo rejimda direktorlar yo'q — filiallar ro'yxati va qo'shish ishlaydi
+  getAdminBranches() {
+    requireAdmin()
+    return ok(
+      branches.map((b) => ({
+        ...b,
+        director: null,
+        teachersCount: teachers.filter((t) => t.branchId === b.id && t.status === 'active').length,
+      })),
+    )
+  },
+  createBranch(input) {
+    requireAdmin()
+    if (input.name.trim().length < 3) return fail('Filial nomini kiriting (kamida 3 harf)')
+    const b: Branch = { id: newId('b'), name: input.name.trim(), org: input.org }
+    branches.push(b)
+    return ok({ ...b, director: null, teachersCount: 0 })
+  },
+  updateBranch(id, input) {
+    requireAdmin()
+    const b = branches.find((x) => x.id === id)
+    if (!b) return fail('Filial topilmadi')
+    Object.assign(b, { name: input.name.trim(), org: input.org })
+    return ok({ ...b, director: null, teachersCount: teachers.filter((t) => t.branchId === id).length })
+  },
+  saveDirector() {
+    return fail("Demo rejimda direktor tayinlab bo'lmaydi. Haqiqiy backend bilan ishlating.")
+  },
+  getDirectorRequests() {
+    return ok([])
+  },
+  decideDirectorRequest() {
+    return fail("Demo rejimda direktorlik arizalari yo'q.")
+  },
+  getTelegramLink() {
+    return fail("Demo rejimda Telegram ulanmaydi.")
+  },
+
+  getDavomatStatus() {
+    return ok({ enabled: false, url: '' })
+  },
+  syncDavomatBranches() {
+    return fail("Demo rejimda davomat tizimi ulanmaydi.")
+  },
+  getDavomatEmployees() {
+    return fail("Demo rejimda davomat tizimi ulanmaydi.")
+  },
+  importDavomatEmployees() {
+    return fail("Demo rejimda davomat tizimi ulanmaydi.")
+  },
+  getDashboardStats(to) {
+    requireAdmin()
+    const week = Array.from({ length: 7 }, (_, i) => addDays(to, i - 6)).map((date) => {
+      const cs = cases.filter((c) => c.date === date)
+      return {
+        date,
+        absences: new Set(cs.map((c) => c.absenceId)).size,
+        found: cs.filter((c) => c.status === 'found').length,
+        pending: cs.filter((c) => c.status === 'pending').length,
+        notFound: cs.filter((c) => c.status === 'not_found').length,
+      }
+    })
+    return ok({ week, upcoming: [] })
+  },
+  getSettingsTree() {
+    return ok({ global: settings, orgs: {}, branches: {} })
+  },
+  saveSettingsOverride() {
+    return fail("Demo rejimda filial sozlamalari saqlanmaydi. Haqiqiy backend bilan ishlating.")
+  },
+  getAttendanceMissing() {
+    return ok({ enabled: false, items: [] })
+  },
+  openAbsenceForMissing() {
+    return fail("Demo rejimda davomat tizimi ulanmaydi.")
   },
 }
 

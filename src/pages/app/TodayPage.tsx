@@ -1,17 +1,50 @@
 // O'qituvchi bosh sahifasi: bugungi darslar, "Kela olmayman", yangi takliflar soni
 import { Link, useNavigate } from 'react-router-dom'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { BellRing, CalendarX2, ChevronRight, DoorOpen, LogOut, Sun } from 'lucide-react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { BellRing, CalendarX2, ChevronRight, DoorOpen, LogOut, Send, Sun } from 'lucide-react'
+import { tg } from '../../lib/telegram'
 import { clearToken } from '../../lib/auth'
 import { ORGS } from '../../lib/org'
 import { OrgLogo } from '../../components/OrgLogo'
+import { InstallAppCard } from '../../components/InstallApp'
 import { api } from '../../api'
 import { formatDate, todayISO } from '../../lib/date'
 import { tintOf } from '../../lib/colors'
 import type { Lesson } from '../../types'
-import { Card, EmptyState, ErrorState, LoadingState, cx } from '../../components/ui'
+import { Button, Card, EmptyState, ErrorState, LoadingState, cx } from '../../components/ui'
 
 const nowHM = () => new Date().toTimeString().slice(0, 5)
+
+/** Telegram'ni bog'lash: bot orqali takliflar va xabarlar kelishi uchun */
+function TelegramLinkCard() {
+  const qc = useQueryClient()
+  const link = useMutation({
+    mutationFn: api.getTelegramLink,
+    onSuccess: ({ url }) => {
+      if (tg?.openTelegramLink) tg.openTelegramLink(url)
+      else window.open(url, '_blank', 'noopener')
+      setTimeout(() => qc.invalidateQueries({ queryKey: ['me'] }), 15_000)
+    },
+  })
+  return (
+    <Card className="space-y-3 ring-2 ring-sky-400/60">
+      <div className="flex items-start gap-3">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-sky-400 to-sky-600 text-white shadow-lg shadow-sky-500/30">
+          <Send className="h-5 w-5" />
+        </div>
+        <div>
+          <div className="font-extrabold">Telegram'ni ulang</div>
+          <div className="text-sm text-tg-hint">Ulanmaguncha o'rinbosar takliflari va xabarlar botdan kelmaydi.</div>
+        </div>
+      </div>
+      {link.isError && <div className="text-sm font-semibold text-rose-600">{(link.error as Error).message}</div>}
+      {link.isSuccess && <div className="text-sm font-semibold text-tg-hint">Botda «Start» ni bosing. Havola {link.data.expiresInMinutes} daqiqa amal qiladi.</div>}
+      <Button className="w-full" icon={Send} loading={link.isPending} onClick={() => link.mutate()}>
+        Telegram'ni ulash
+      </Button>
+    </Card>
+  )
+}
 
 function LessonTimeline({ lessons }: { lessons: Lesson[] }) {
   const now = nowHM()
@@ -110,6 +143,12 @@ export default function TodayPage() {
           </div>
         </div>
       </div>
+
+      {/* Telegram ulanmagan bo'lsa — takliflar botdan kelmaydi */}
+      {me.data && me.data.telegramLinked === false && <TelegramLinkCard />}
+
+      {/* Telefonga o'rnatish (o'rnatilgan bo'lsa yoki imkon bo'lmasa — ko'rinmaydi) */}
+      <InstallAppCard />
 
       {/* Kela olmayman */}
       <Link

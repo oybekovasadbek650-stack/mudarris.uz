@@ -43,8 +43,11 @@ const qs = (params: Record<string, string | undefined>) => {
 export const httpApi: Api = {
   // Telegram ichida kirilsa initData ham yuboriladi — backend shu Telegram akkauntni o'qituvchiga bog'laydi
   login: (login, password) => send('POST', '/auth/login', { login, password, initData: tg?.initData || undefined }),
+  loginWithTelegram: () => send('POST', '/auth/telegram', { initData: tg?.initData ?? '' }),
   register: (input) => send('POST', '/auth/register', input),
   getBranches: () => get('/branches'),
+  tgStatus: () => send('POST', '/auth/tg-status', { initData: tg?.initData ?? '' }),
+  tgChatRegister: () => send('POST', '/auth/tg-chat-register', { initData: tg?.initData ?? '' }),
 
   getMe: () => get('/me'),
   getMyLessons: (date) => get(`/me/lessons${qs({ date })}`),
@@ -58,6 +61,7 @@ export const httpApi: Api = {
   chooseCandidate: (caseId, teacherId) => send('POST', `/cases/${caseId}/choose`, { teacherId }),
 
   getDayOverview: (date, branchId) => get(`/admin/overview${qs({ date, branchId })}`),
+  getDashboardStats: (to, branchId, org, days) => get(`/admin/stats${qs({ to, branchId, org, days: days ? String(days) : undefined })}`),
   getSchedule: (branchId) => get(`/admin/schedule${qs({ branchId })}`),
   importSchedule: (file) => {
     const form = new FormData()
@@ -70,5 +74,24 @@ export const httpApi: Api = {
   rejectTeacher: (id) => send('POST', `/admin/teachers/${id}/reject`),
   getSettings: () => get('/admin/settings'),
   saveSettings: (s) => send('PUT', '/admin/settings', s),
+  getSettingsTree: () => get('/admin/settings/tree'),
+  saveSettingsOverride: (scope, id, values) => send('PUT', '/admin/settings/override', { scope, id, values }),
   getMonthlyReport: (month) => get(`/admin/reports/monthly${qs({ month })}`),
+  approveCandidate: (caseId, teacherId) => send('POST', `/admin/cases/${caseId}/choose`, { teacherId }),
+
+  getAdminBranches: () => get('/admin/branches'),
+  createBranch: (input) => send('POST', '/admin/branches', input),
+  updateBranch: (id, input) => send('PUT', `/admin/branches/${id}`, input),
+  saveDirector: (branchId, input) => send('PUT', `/admin/branches/${branchId}/director`, input),
+  getDirectorRequests: () => get('/admin/director-requests'),
+  decideDirectorRequest: (id, approve) => send('POST', `/admin/director-requests/${id}/${approve ? 'approve' : 'reject'}`),
+
+  getTelegramLink: () => send('POST', '/me/telegram-link'),
+
+  getDavomatStatus: () => get('/admin/davomat/status'),
+  syncDavomatBranches: () => send('POST', '/admin/davomat/sync-branches'),
+  getDavomatEmployees: () => get('/admin/davomat/employees'),
+  importDavomatEmployees: (codes) => send('POST', '/admin/davomat/import', { codes }),
+  getAttendanceMissing: (date) => get(`/admin/attendance/missing${qs({ date })}`),
+  openAbsenceForMissing: (teacherId, date) => send('POST', '/admin/attendance/absence', { teacherId, date }),
 }

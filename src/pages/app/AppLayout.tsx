@@ -23,12 +23,17 @@ export default function AppLayout() {
     //   startapp=offers     -> Takliflar
     //   startapp=case_c123  -> Mas'ul shaxs uchun nomzod tanlash
     //   startapp=absence    -> "Kela olmayman"
+    //   startapp=cases      -> Mas'ul shaxs: holatlar ro'yxati
+    //   startapp=substitutions -> O'rinbosar darslarim
+    // t.me havolasi bo'lmasa (bot web_app tugmasi), parametr URL'da keladi: /app?startapp=...
     if (startParamHandled) return
     startParamHandled = true
-    const p = startParam()
+    const p = startParam() ?? new URLSearchParams(window.location.search).get('startapp')
     if (!p) return
     if (p === 'offers' || p.startsWith('offer_')) navigate('/app/offers', { replace: true })
     else if (p.startsWith('case_')) navigate(`/app/coordinator/${p.slice(5)}`, { replace: true })
+    else if (p === 'cases') navigate('/app/coordinator', { replace: true })
+    else if (p === 'substitutions') navigate('/app/substitutions', { replace: true })
     else if (p === 'absence') navigate('/app/absence', { replace: true })
   }, [navigate])
 

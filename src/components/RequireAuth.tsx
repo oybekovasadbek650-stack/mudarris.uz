@@ -1,13 +1,15 @@
-// Himoyalangan sahifalar: kirmagan bo'lsa — kirish sahifasiga, roli mos kelmasa — o'z sahifasiga
+// Himoyalangan sahifalar: kirmagan bo'lsa — kirish sahifasiga, roli mos kelmasa — o'z sahifasiga.
+// role="admin" — panel: umumiy rahbariyat va filial direktori kiradi.
 import type { ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Loader2 } from 'lucide-react'
 import { api } from '../api'
 import { getToken } from '../lib/auth'
-import type { Role } from '../types'
+import { isPanelRole, type Role } from '../types'
 
-const loginPathFor = (role: Role) => (role === 'admin' ? '/admin/login' : '/login')
+const loginPathFor = (role: Role) => (isPanelRole(role) ? '/admin/login' : '/login')
+const allowed = (required: Role, actual: Role) => (required === 'admin' ? isPanelRole(actual) : actual === required)
 
 export default function RequireAuth({ role, children }: { role: Role; children: ReactNode }) {
   const location = useLocation()
@@ -22,6 +24,6 @@ export default function RequireAuth({ role, children }: { role: Role; children: 
       </div>
     )
   }
-  if (me.data.role !== role) return <Navigate to={me.data.role === 'admin' ? '/admin' : '/app'} replace />
+  if (!allowed(role, me.data.role)) return <Navigate to={isPanelRole(me.data.role) ? '/admin' : '/app'} replace />
   return <>{children}</>
 }

@@ -3,10 +3,11 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { CalendarRange, LogIn, TrendingUp, UsersRound } from 'lucide-react'
-import { OrgLogoStack } from '../../components/OrgLogo'
+import { MudarrisLogo } from '../../components/OrgLogo'
 import { useApplyOrg } from '../../lib/org'
 import { api, USE_MOCK } from '../../api'
 import { setToken } from '../../lib/auth'
+import { isPanelRole } from '../../types'
 import { PasswordInput } from '../../components/AuthShell'
 import { Alert, Button, Field, inputClass } from '../../components/ui'
 
@@ -26,11 +27,11 @@ export default function AdminLoginPage() {
   const signIn = useMutation({
     mutationFn: async () => {
       const res = await api.login(login, password)
-      if (res.user.role !== 'admin') throw new Error("Bu hisob rahbariyat uchun emas. O'qituvchilar Telegram bot orqali kiradi.")
+      if (!isPanelRole(res.user.role)) throw new Error("Bu hisob rahbariyat uchun emas. O'qituvchilar Telegram bot orqali kiradi.")
       return res
     },
-    onSuccess: ({ token }) => {
-      setToken(token, 'admin')
+    onSuccess: ({ token, user }) => {
+      setToken(token, user.role)
       qc.clear()
       navigate('/admin', { replace: true })
     },
@@ -42,7 +43,7 @@ export default function AdminLoginPage() {
         <div className="absolute -top-32 -left-24 h-96 w-96 rounded-full bg-brand/35 blur-3xl" />
         <div className="absolute -right-24 -bottom-32 h-96 w-96 rounded-full bg-brand-accent/25 blur-3xl" />
         <div className="relative flex items-center gap-3">
-          <OrgLogoStack className="h-12 w-12" />
+          <MudarrisLogo className="h-12 w-12" />
           <div className="text-xl font-extrabold">Mudarris</div>
         </div>
         <div className="relative">
@@ -64,7 +65,7 @@ export default function AdminLoginPage() {
       <div className="flex items-center justify-center bg-app p-6">
         <div className="w-full max-w-sm animate-fade-up">
           <h1 className="text-3xl font-extrabold">Panelga kirish</h1>
-          <p className="mt-1 mb-8 text-sm font-semibold text-slate-500">Rahbariyat login va paroli bilan kiring</p>
+          <p className="mt-1 mb-8 text-sm font-semibold text-slate-500">Rahbariyat yoki filial direktori login va paroli bilan kiring</p>
           <form
             className="space-y-4"
             onSubmit={(e) => {

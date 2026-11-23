@@ -7,16 +7,20 @@ import type { TeacherInput } from '../../api/contract'
 import { formatDate } from '../../lib/date'
 import type { Branch, Teacher } from '../../types'
 import { Alert, Avatar, Badge, Button, Card, EmptyState, ErrorState, Field, IconTile, LoadingState, SubjectChip, cx, inputClass } from '../../components/ui'
+import { useToast } from '../../lib/toast'
 import { AdminHeader, selectClass } from './AdminLayout'
 import { useOrgBranches } from '../../lib/adminOrg'
 import { ORGS } from '../../lib/org'
+import { BranchSelect } from '../../components/BranchSelect'
 
 function TeacherForm({ initial, branches, onClose }: { initial: Teacher; branches: Branch[]; onClose: () => void }) {
   const qc = useQueryClient()
+  const toast = useToast()
   const [form, setForm] = useState({
     fullName: initial.fullName,
     phone: initial.phone,
     subjects: initial.subjects.join(', '),
+    extraSubjects: (initial.extraSubjects ?? []).join(', '),
     branchId: initial.branchId,
     isCoordinator: initial.isCoordinator,
   })
@@ -27,6 +31,7 @@ function TeacherForm({ initial, branches, onClose }: { initial: Teacher; branche
         fullName: form.fullName.trim(),
         phone: form.phone.trim(),
         subjects: form.subjects.split(',').map((s) => s.trim()).filter(Boolean),
+        extraSubjects: form.extraSubjects.split(',').map((s) => s.trim()).filter(Boolean),
         branchId: form.branchId,
         isCoordinator: form.isCoordinator,
       }
@@ -34,6 +39,7 @@ function TeacherForm({ initial, branches, onClose }: { initial: Teacher; branche
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['teachers'] })
+      toast("Ma'lumotlar saqlandi")
       onClose()
     },
   })
@@ -65,18 +71,17 @@ function TeacherForm({ initial, branches, onClose }: { initial: Teacher; branche
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Telefon" hint="Telegram'ga ulanish shu raqam bilan">
-              <input className={inputClass} type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} required />
+              <input className={inputClass} type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
             </Field>
             <Field label="Filial">
-              <select className={inputClass} value={form.branchId} onChange={(e) => setForm({ ...form, branchId: e.target.value })}>
-                {branches.map((b) => (
-                  <option key={b.id} value={b.id}>{b.name}</option>
-                ))}
-              </select>
+              <BranchSelect variant="field" value={form.branchId} onChange={(id) => setForm({ ...form, branchId: id })} branches={branches} />
             </Field>
           </div>
-          <Field label="Fanlar" hint="Vergul bilan ajrating: Matematika, Fizika">
+          <Field label="Asosiy fanlar" hint="Vergul bilan ajrating: Matematika, Fizika">
             <input className={inputClass} value={form.subjects} onChange={(e) => setForm({ ...form, subjects: e.target.value })} required />
+          </Field>
+          <Field label="Qo'shimcha fanlar" hint="O'rinbosar sifatida bu fanlarni ham o'ta oladi">
+            <input className={inputClass} value={form.extraSubjects} onChange={(e) => setForm({ ...form, extraSubjects: e.target.value })} />
           </Field>
           <label className={cx('flex cursor-pointer items-center gap-3 rounded-2xl p-4 ring-2 transition', form.isCoordinator ? 'bg-brand/8 ring-brand' : 'bg-slate-50 ring-transparent')}>
             <input type="checkbox" className="h-5 w-5 accent-brand" checked={form.isCoordinator} onChange={(e) => setForm({ ...form, isCoordinator: e.target.checked })} />
@@ -98,9 +103,13 @@ function TeacherForm({ initial, branches, onClose }: { initial: Teacher; branche
 
 function PendingCard({ t, branchName }: { t: Teacher; branchName: string }) {
   const qc = useQueryClient()
+  const toast = useToast()
   const decide = useMutation({
     mutationFn: (approve: boolean) => (approve ? api.approveTeacher(t.id) : api.rejectTeacher(t.id)),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['teachers'] }),
+    onSuccess: (_, approve) => {
+      qc.invalidateQueries({ queryKey: ['teachers'] })
+      toast(approve ? `${t.fullName} tasdiqlandi` : `${t.fullName} rad etildi`, approve ? 'success' : 'info')
+    },
   })
   return (
     <Card className="flex flex-wrap items-center gap-4 p-5">
@@ -108,7 +117,7 @@ function PendingCard({ t, branchName }: { t: Teacher; branchName: string }) {
       <div className="min-w-56 flex-1">
         <div className="text-base font-extrabold">{t.fullName}</div>
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-slate-500">
-          <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" /> {t.phone}</span>
+          {t.phone && <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" /> {t.phone}</span>}
           <span>{branchName}</span>
           <span>login: <b className="text-slate-700">{t.login}</b></span>
           <span className="inline-flex items-center gap-1"><Clock3 className="h-3 w-3" /> {formatDate(t.registeredAt)}</span>
@@ -175,7 +184,7 @@ export default function TeachersPage() {
           </div>
         </Card>
         <Card className="flex items-center gap-4 p-5">
-          <IconTile icon={Send} gradient="from-sky-400 to-cyan-500" />
+          <IconTile icon={Send} gradient="from-emerald-400 to-teal-500" />
           <div>
             <div className="text-3xl font-extrabold">{linked}<span className="text-lg text-slate-400">/{total}</span></div>
             <div className="text-sm font-bold text-slate-500">Telegram ulangan</div>
@@ -193,7 +202,7 @@ export default function TeachersPage() {
       {total - linked > 0 && (
         <div className="mb-5">
           <Alert tone="amber">
-            {total - linked} ta o'qituvchi Telegram botga ulanmagan — ular taklif va xabarlarni olmaydi. Ular Telegram bot ichida bir marta login-parol bilan kirsa, avtomatik ulanadi.
+            {total - linked} ta o'qituvchi Telegram botga ulanmagan — ular taklif va xabarlarni olmaydi. Ular @mudarris_orinbosar_bot ga kirib /start bosib, «Raqamni ulashish» orqali ro'yxatdan o'tsa — telefon raqami bo'yicha o'z yozuviga avtomatik ulanadi.
           </Alert>
         </div>
       )}
@@ -203,12 +212,9 @@ export default function TeachersPage() {
           <Search className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input className={cx(selectClass, 'w-full pl-11')} placeholder="Ism yoki fan bo'yicha qidirish..." value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
-        <select className={selectClass} value={branchId} onChange={(e) => setBranchId(e.target.value)}>
-          <option value="">Barcha filiallar</option>
-          {branches.map((b) => (
-            <option key={b.id} value={b.id}>{b.name}</option>
-          ))}
-        </select>
+        {branches.length > 1 && (
+          <BranchSelect value={branchId} onChange={setBranchId} branches={branches} allLabel="Barcha filiallar" className="min-w-60" />
+        )}
       </div>
 
       {teachers.isPending ? (
@@ -245,15 +251,28 @@ export default function TeachersPage() {
                         <div className="flex items-center gap-2 font-extrabold">
                           {t.fullName}
                           {t.isCoordinator && <Badge tone="violet">Mas'ul</Badge>}
+                          {t.davomatCode && <span title={`Davomat tizimi bilan bog'langan (kod: ${t.davomatCode})`}><Badge tone="green">Davomat</Badge></span>}
                         </div>
                         <div className="flex items-center gap-1 text-xs font-semibold text-slate-400">
-                          <Phone className="h-3 w-3" /> {t.phone}
+                          {t.phone ? <><Phone className="h-3 w-3" /> {t.phone}</> : <>login: {t.login}</>}
                         </div>
                       </div>
                     </div>
                   </td>
                   <td className="px-4 py-3.5">
-                    <div className="flex flex-wrap gap-1">{t.subjects.map((s) => <SubjectChip key={s} subject={s} />)}</div>
+                    <div className="flex flex-wrap gap-1">
+                      {t.subjects.length === 0 && (
+                        <span title="Fanlari bo'lmagan ustoz o'rinbosar nomzodi bo'lmaydi. Tahrirlang yoki dars jadvalini yuklang.">
+                          <Badge tone="amber" dot>Fan kiritilmagan</Badge>
+                        </span>
+                      )}
+                      {t.subjects.map((s) => <SubjectChip key={s} subject={s} />)}
+                    </div>
+                    {(t.extraSubjects?.length ?? 0) > 0 && (
+                      <div className="mt-1 text-xs font-semibold text-slate-400" title="Qo'shimcha fanlar: o'rinbosar sifatida bularni ham o'ta oladi">
+                        + {t.extraSubjects!.join(', ')}
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-3.5 font-semibold text-slate-600">{branchName(t.branchId)}</td>
                   <td className="px-4 py-3.5">

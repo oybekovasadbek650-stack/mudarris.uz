@@ -1,12 +1,38 @@
 // Takliflar: boshqa ustoz o'rniga darsga kirish so'rovlari
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, Inbox, X } from 'lucide-react'
+import { Check, Inbox, Timer, X } from 'lucide-react'
 import { api } from '../../api'
 import { formatDate } from '../../lib/date'
 import { tintOf } from '../../lib/colors'
 import { haptic } from '../../lib/telegram'
 import type { Offer } from '../../types'
 import { Alert, Badge, Button, Card, EmptyState, ErrorState, LessonInfo, LoadingState, PageHeader, cx } from '../../components/ui'
+
+/** Javob berish muddati: "14:35 gacha · 12 daqiqa qoldi" */
+function useNow(intervalMs: number) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), intervalMs)
+    return () => clearInterval(t)
+  }, [intervalMs])
+  return now
+}
+
+function Deadline({ iso }: { iso: string }) {
+  const now = useNow(15_000)
+  const end = new Date(iso)
+  const left = Math.max(0, Math.ceil((end.getTime() - now) / 60_000))
+  const time = end.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit', hour12: false })
+  return (
+    <div className={cx('flex items-center gap-2 rounded-2xl px-3.5 py-2.5 text-sm font-semibold', left <= 5 ? 'bg-rose-500/10 text-rose-700' : 'bg-amber-400/15 text-amber-900')}>
+      <Timer className="h-4 w-4 shrink-0" />
+      <span>
+        <b>{time}</b> gacha javob bering · {left > 0 ? `${left} daqiqa qoldi` : "muddat tugadi"}
+      </span>
+    </div>
+  )
+}
 
 function OfferCard({ offer }: { offer: Offer }) {
   const qc = useQueryClient()
@@ -40,6 +66,7 @@ function OfferCard({ offer }: { offer: Offer }) {
           <span className="text-tg-hint"> kela olmaydi. O'rniga kira olasizmi?</span>
         </p>
         <LessonInfo para={l.para} time={`${l.startTime}–${l.endTime}`} className={l.className} subject={l.subject} room={l.room} />
+        {offer.expiresAt && <Deadline iso={offer.expiresAt} />}
         {respond.isError && <Alert>{(respond.error as Error).message}</Alert>}
         <div className="grid grid-cols-2 gap-2 pt-1">
           <Button
@@ -69,11 +96,13 @@ function OfferCard({ offer }: { offer: Offer }) {
 function answeredLabel(o: Offer) {
   if (o.status === 'accepted') return o.assigned ? { text: 'Siz tanlandingiz', tone: 'green' as const } : { text: 'Qabul qilindi', tone: 'blue' as const }
   if (o.status === 'rejected') return { text: 'Rad etildi', tone: 'red' as const }
-  return { text: 'Boshqa ustoz tanlandi', tone: 'gray' as const }
+  // expired: javob muddati o'tgan yoki mas'ul boshqa ustozni tanlagan
+  return { text: 'Taklif yopildi', tone: 'gray' as const }
 }
 
 export default function OffersPage() {
-  const offers = useQuery({ queryKey: ['offers'], queryFn: api.getMyOffers })
+  // Har 30 soniyada yangilanadi: qolgan daqiqalar va muddati o'tgan takliflar
+  const offers = useQuery({ queryKey: ['offers'], queryFn: api.getMyOffers, refetchInterval: 30_000 })
 
   if (offers.isPending) return <LoadingState />
   if (offers.isError) return <ErrorState error={offers.error} onRetry={() => offers.refetch()} />

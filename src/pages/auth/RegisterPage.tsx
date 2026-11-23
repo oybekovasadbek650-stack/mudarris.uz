@@ -5,9 +5,10 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { Check, Clock3, Plus, UserPlus } from 'lucide-react'
 import { api } from '../../api'
 import { haptic, initTelegram } from '../../lib/telegram'
-import { ORG_LIST, useApplyOrg } from '../../lib/org'
+import { useApplyOrg } from '../../lib/org'
 import { AuthShell, PasswordInput } from '../../components/AuthShell'
 import { Alert, Button, EmptyState, Field, cx, inputClass } from '../../components/ui'
+import { BranchSelect } from '../../components/BranchSelect'
 
 const SUBJECTS = [
   'Matematika', 'Fizika', 'Kimyo', 'Biologiya', 'Ona tili', 'Adabiyot',
@@ -99,16 +100,16 @@ export default function RegisterPage() {
           <input className={inputClass} type="tel" value={form.phone} onChange={set('phone')} autoComplete="tel" required />
         </Field>
         <Field label="Qayerda ishlaysiz?" hint="Bog'cha, maktab yoki akademiya filialini tanlang">
-          <select className={inputClass} value={branchId} onChange={set('branchId')}>
-            <option value="" disabled>Tanlang...</option>
-            {ORG_LIST.map((o) => (
-              <optgroup key={o.id} label={o.name}>
-                {branches.data?.filter((b) => b.org === o.id).map((b) => (
-                  <option key={b.id} value={b.id}>{b.name}</option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
+          <BranchSelect
+            variant="field"
+            value={branchId}
+            onChange={(id) => {
+              setLocalError('')
+              setForm((f) => ({ ...f, branchId: id }))
+            }}
+            branches={branches.data ?? []}
+            placeholder="Filialingizni tanlang…"
+          />
         </Field>
 
         <div>

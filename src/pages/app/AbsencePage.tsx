@@ -7,14 +7,25 @@ import { api } from '../../api'
 import { addDays, formatDate, fromISO, todayISO, WEEKDAYS_SHORT, weekdayOf } from '../../lib/date'
 import { tintOf } from '../../lib/colors'
 import { haptic } from '../../lib/telegram'
+import type { Me } from '../../types'
+import { DatePickButton } from '../../components/Pickers'
 import { Alert, Button, Card, EmptyState, ErrorState, LoadingState, PageHeader, Step, cx, inputClass } from '../../components/ui'
 
 const QUICK_REASONS = ['Kasallik', 'Oilaviy sabab', 'Malaka oshirish', 'Xizmat safari']
+const DEFAULT_WORK_DAYS = [1, 2, 3, 4, 5, 6]
 
 export default function AbsencePage() {
   const navigate = useNavigate()
   const qc = useQueryClient()
-  const [date, setDateRaw] = useState(todayISO())
+  // Filialning ish kunlari (masalan akademiyada yakshanba ham bo'lishi mumkin); me RequireAuth'da yuklangan
+  const workDays = qc.getQueryData<Me>(['me'])?.workDays ?? DEFAULT_WORK_DAYS
+  const isWorkDay = (d: string) => workDays.includes(weekdayOf(d))
+  // Bugun dam olish kuni bo'lsa — standart sana keyingi ish kuni
+  const [date, setDateRaw] = useState(() => {
+    let d = todayISO()
+    for (let i = 0; i < 7 && !isWorkDay(d); i++) d = addDays(d, 1)
+    return d
+  })
   const [reason, setReason] = useState('')
   // Standart holatda o'sha kungi hamma darslar belgilangan; foydalanuvchi olib tashlaganlarini saqlaymiz
   const [unchecked, setUnchecked] = useState<string[]>([])
@@ -51,7 +62,7 @@ export default function AbsencePage() {
 
   const toggle = (id: string) => setUnchecked((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))
   const canSubmit = selected.length > 0 && reason.trim().length >= 3
-  const quickDays = Array.from({ length: 7 }, (_, n) => addDays(todayISO(), n)).filter((d) => weekdayOf(d) !== 7)
+  const quickDays = Array.from({ length: 7 }, (_, n) => addDays(todayISO(), n)).filter(isWorkDay)
 
   return (
     <div>
@@ -80,14 +91,14 @@ export default function AbsencePage() {
               )
             })}
           </div>
-          <input
-            type="date"
-            className={cx(inputClass, 'mt-3')}
-            value={date}
-            min={todayISO()}
-            max={addDays(todayISO(), 60)}
-            onChange={(e) => e.target.value && setDate(e.target.value)}
-          />
+          <div className="mt-3">
+            <DatePickButton
+              label="Boshqa sana"
+              value={date}
+              onChange={setDate}
+              isAllowed={(d) => d >= todayISO() && d <= addDays(todayISO(), 60) && isWorkDay(d)}
+            />
+          </div>
         </Card>
 
         <Card>

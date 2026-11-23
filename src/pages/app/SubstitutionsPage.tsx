@@ -43,7 +43,7 @@ export default function SubstitutionsPage() {
 
   return (
     <div>
-      <PageHeader title="O'rinbosar darslarim" subtitle="Siz qabul qilgan darslar" />
+      <PageHeader title="O'rinbosar darslarim" subtitle="Mas'ul shaxs sizni tayinlagan darslar" />
 
       <div className="mb-5 grid grid-cols-2 gap-3">
         <div className="rounded-3xl bg-linear-to-br from-emerald-400 to-teal-500 p-4 text-white shadow-lg shadow-emerald-500/25">

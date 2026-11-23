@@ -3,24 +3,28 @@
 // localStorage ishlamasa (masalan, maxfiy rejim) — faqat xotirada turadi.
 import type { Role } from '../types'
 
-const keyOf = (role: Role) => `token:${role}`
-const memory: Partial<Record<Role, string>> = {}
+// Direktor ham panelga kiradi — uning tokeni rahbariyat tokeni o'rnida saqlanadi (scope = /admin)
+type Scope = 'admin' | 'teacher'
+const scopeOf = (role: Role): Scope => (role === 'teacher' ? 'teacher' : 'admin')
+const keyOf = (role: Role) => `token:${scopeOf(role)}`
+const memory: Partial<Record<Scope, string>> = {}
 
 /** Joriy sahifa qaysi qismga tegishli: /admin... -> admin, qolgani -> teacher */
 export const currentScope = (): Role => (window.location.pathname.startsWith('/admin') ? 'admin' : 'teacher')
 
 export function getToken(role: Role = currentScope()) {
-  if (memory[role]) return memory[role]
+  const s = scopeOf(role)
+  if (memory[s]) return memory[s]
   try {
-    memory[role] = localStorage.getItem(keyOf(role)) ?? undefined
+    memory[s] = localStorage.getItem(keyOf(role)) ?? undefined
   } catch {
     /* localStorage yopiq */
   }
-  return memory[role] ?? null
+  return memory[s] ?? null
 }
 
 export function setToken(token: string, role: Role) {
-  memory[role] = token
+  memory[scopeOf(role)] = token
   try {
     localStorage.setItem(keyOf(role), token)
   } catch {
@@ -29,7 +33,7 @@ export function setToken(token: string, role: Role) {
 }
 
 export function clearToken(role: Role = currentScope()) {
-  delete memory[role]
+  delete memory[scopeOf(role)]
   try {
     localStorage.removeItem(keyOf(role))
   } catch {

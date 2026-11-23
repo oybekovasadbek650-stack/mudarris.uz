@@ -11,6 +11,14 @@ interface TgWebApp {
   expand(): void
   BackButton: { show(): void; hide(): void; onClick(cb: () => void): void; offClick(cb: () => void): void }
   HapticFeedback?: { notificationOccurred(type: 'success' | 'error' | 'warning'): void }
+  /** t.me havolasini Telegram ichida ochadi (Mini App yopilmaydi) */
+  openTelegramLink?(url: string): void
+  /** Mini App'ni yopib, bot chatiga qaytaradi */
+  close?(): void
+  /** Bot API 8.0+: Mini App'ni telefon ekraniga belgi qilib qo'shish */
+  addToHomeScreen?(): void
+  checkHomeScreenStatus?(cb: (status: 'unsupported' | 'unknown' | 'added' | 'missed') => void): void
+  isVersionAtLeast?(v: string): boolean
 }
 
 declare global {

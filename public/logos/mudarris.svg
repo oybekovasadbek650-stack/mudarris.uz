@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Mudarris">
+  <defs>
+    <linearGradient id="mdr-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#13213B"/>
+      <stop offset="0.55" stop-color="#1B3266"/>
+      <stop offset="1" stop-color="#2A539B"/>
+    </linearGradient>
+    <linearGradient id="mdr-gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F6D452"/>
+      <stop offset="1" stop-color="#E0B312"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#mdr-bg)"/>
+  <!-- Ochiq kitob: tashqi qirralari baland, o'rtasi past — silueti "M" -->
+  <path d="M104 142 C150 140 206 156 244 196 L244 382 C206 350 150 338 104 342 Z" fill="#FFFFFF"/>
+  <path d="M408 142 C362 140 306 156 268 196 L268 382 C306 350 362 338 408 342 Z" fill="#FFFFFF"/>
+  <!-- Varaqlar osti -->
+  <path d="M104 366 C150 360 206 370 244 398" fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" opacity="0.85"/>
+  <path d="M408 366 C362 360 306 370 268 398" fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" opacity="0.85"/>
+  <!-- Pero uchi (akademiya) — kitob o'rtasida, oltin rang (bog'cha sarig'i) -->
+  <path d="M256 362 L222 282 C222 250 236 226 256 204 C276 226 290 250 290 282 Z" fill="url(#mdr-gold)" stroke="#1B3266" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M256 352 L256 284" stroke="#1B3266" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="256" cy="274" r="11" fill="#1B3266"/>
+</svg>

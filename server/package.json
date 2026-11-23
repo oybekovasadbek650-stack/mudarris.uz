@@ -1,0 +1,23 @@
+{
+  "name": "orinbosar-server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch --env-file-if-exists=.env src/index.ts",
+    "start": "node --env-file-if-exists=.env src/index.ts",
+    "seed": "node --env-file-if-exists=.env scripts/seed.ts",
+    "test:scenarios": "node scripts/scenarios.ts",
+    "typecheck": "node node_modules/typescript/bin/tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.19.19",
+    "bcryptjs": "^3.0.3",
+    "exceljs": "^4.4.0",
+    "grammy": "^1.46.0",
+    "hono": "^4.13.20"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "typescript": "^5.9.3"
+  }
+}

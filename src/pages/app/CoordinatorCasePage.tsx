@@ -47,6 +47,7 @@ export default function CoordinatorCasePage() {
           <MessageSquareQuote className="mt-0.5 h-4 w-4 shrink-0 text-violet-500" />
           <span className="font-medium">{c.reason}</span>
         </div>
+        {c.lateNotice && <Alert tone="amber">Kech xabar berildi — ariza belgilangan muddatdan keyin yuborilgan.</Alert>}
       </Card>
 
       {choose.isError && <Alert>{(choose.error as Error).message}</Alert>}
@@ -57,7 +58,7 @@ export default function CoordinatorCasePage() {
             icon={CheckCircle2}
             gradient="from-emerald-400 to-teal-500"
             title="O'rinbosar tanlandi!"
-            text={`${c.chosenTeacher?.fullName} darsga kiradi. Unga bot orqali xabar yuborildi.`}
+            text={`${c.chosenTeacher?.fullName} darsga kiradi. Unga bot orqali xabar yuborildi.${c.chosenBy ? ` Tasdiqladi — ${c.chosenBy}.` : ''}`}
           />
         </Card>
       ) : c.status === 'not_found' ? (

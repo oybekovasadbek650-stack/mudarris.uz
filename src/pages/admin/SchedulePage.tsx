@@ -1,21 +1,25 @@
 // Dars jadvali: hafta ko'rinishi (kunlar x paralar), sinf bo'yicha filtr, Excel'dan yuklash
 import { useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CalendarRange, FileSpreadsheet } from 'lucide-react'
+import { Building2, CalendarRange, FileSpreadsheet } from 'lucide-react'
+import { ORGS } from '../../lib/org'
+import type { Org } from '../../types'
 import { api } from '../../api'
 import { WEEKDAYS, todayISO, weekdayOf } from '../../lib/date'
 import { tintOf } from '../../lib/colors'
 import { Alert, Button, Card, EmptyState, ErrorState, LoadingState, cx } from '../../components/ui'
-import { AdminHeader, selectClass } from './AdminLayout'
+import { AdminHeader } from './AdminLayout'
 import { useOrgBranches } from '../../lib/adminOrg'
+import { BranchSelect } from '../../components/BranchSelect'
 
-const DAYS = [1, 2, 3, 4, 5, 6]
+const WEEK = [1, 2, 3, 4, 5, 6]
 const PARAS = [1, 2, 3, 4, 5, 6]
 
 export default function SchedulePage() {
   const qc = useQueryClient()
   const fileRef = useRef<HTMLInputElement>(null)
-  const { branches } = useOrgBranches()
+  const { org, loaded, branches } = useOrgBranches()
+  const noBranches = loaded && branches.length === 0
   const [pickedBranch, setBranchId] = useState('')
   const branchId = branches.some((b) => b.id === pickedBranch) ? pickedBranch : (branches[0]?.id ?? '')
   const [className, setClassName] = useState('')
@@ -37,6 +41,8 @@ export default function SchedulePage() {
     [schedule.data],
   )
   const visible = schedule.data?.filter((l) => !className || l.className === className) ?? []
+  // Yakshanba ustuni faqat shu kuni darslar bo'lsa (masalan akademiyada)
+  const DAYS = schedule.data?.some((l) => l.weekday === 7) ? [...WEEK, 7] : WEEK
   const timeOf = (p: number) => schedule.data?.find((l) => l.para === p)
 
   return (
@@ -46,11 +52,17 @@ export default function SchedulePage() {
         subtitle={schedule.data ? `Haftalik ko'rinish · ${visible.length} ta dars` : "Haftalik ko'rinish"}
         actions={
           <>
-            <select className={selectClass} value={branchId} onChange={(e) => { setBranchId(e.target.value); setClassName('') }}>
-              {branches.map((b) => (
-                <option key={b.id} value={b.id}>{b.name}</option>
-              ))}
-            </select>
+            {branches.length > 1 && (
+              <BranchSelect
+                value={branchId}
+                onChange={(id) => {
+                  setBranchId(id)
+                  setClassName('')
+                }}
+                branches={branches}
+                className="min-w-60"
+              />
+            )}
             <input
               ref={fileRef}
               type="file"
@@ -97,7 +109,15 @@ export default function SchedulePage() {
         </div>
       )}
 
-      {schedule.isPending ? (
+      {noBranches ? (
+        <Card>
+          <EmptyState
+            icon={Building2}
+            title={`${ORGS[org as Org]?.name ?? 'Bu tashkilot'}da hali filial yo'q`}
+            text="Yuqoridagi tanlovdan boshqa tashkilotni tanlang yoki «Hammasi»ni bosing."
+          />
+        </Card>
+      ) : schedule.isPending ? (
         <LoadingState />
       ) : schedule.isError ? (
         <ErrorState error={schedule.error} onRetry={() => schedule.refetch()} />

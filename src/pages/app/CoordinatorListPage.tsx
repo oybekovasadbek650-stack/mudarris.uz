@@ -13,7 +13,7 @@ function CaseRow({ c }: { c: CoverCase }) {
     c.status === 'found'
       ? `O'rinbosar: ${c.chosenTeacher?.fullName}`
       : c.status === 'not_found'
-        ? 'Hech kim qabul qilmadi'
+        ? "Mos o'rinbosar topilmadi"
         : ready
           ? `${c.candidates.length} ta nomzod tayyor — tanlang`
           : 'Ustozlar javobi kutilmoqda'
